@@ -10,6 +10,19 @@ export default function PJForm() {
 
   return (
     <>
+      {/* Data de Registro da Pessoa (campo principal 'data' do backend) */}
+      <Form.Item
+        label="Data de Registro"
+        name="dataRegistro"
+      >
+        <DatePicker
+          style={{ width: "100%" }}
+          format="DD/MM/YYYY"
+          allowClear
+          placeholder="Selecione a data de registro"
+        />
+      </Form.Item>
+
       <h3 style={{ marginTop: 20 }}>Dados da Inscrição Estadual (IE)</h3>
 
       <Form.Item
@@ -36,7 +49,7 @@ export default function PJForm() {
           style={{ width: "100%" }}
           format="YYYY-MM-DD"
           allowClear
-          placeholder="Selecione a data de registro"
+          placeholder="Selecione a data de registro (IE)"
         />
       </Form.Item>
     </>
