@@ -2,24 +2,20 @@ import PF from "../pessoas/PF.mjs";
 
 export default class PFDAO {
 
-    constructor(id = null) {
-        this.baseUrl = "https://backend-pessoas.vercel.app/pf";
-        this.cache = [];
-      
-        if (id) {
-          // Carrega um único registro e guarda no cache
-          this.cache = [];
-          this.buscarPorId(id).then((pessoa) => {
-            if (pessoa) this.cache = [pessoa];
-          });
-        } else {
-          // Carrega a lista completa
-          this.carregarLista();
-        }
-      }
-  
+  constructor(id = null) {
+    this.baseUrl = "https://backend-pessoas.vercel.app/pf";
+    this.cache = [];
 
-  // 🔹 Busca remota e atualiza o cache
+    if (id) {
+      this.cache = [];
+      this.buscarPorId(id).then((pessoa) => {
+        if (pessoa) this.cache = [pessoa];
+      });
+    } else {
+      this.carregarLista();
+    }
+  }
+
   async carregarLista() {
     try {
       const resp = await fetch(this.baseUrl);
@@ -33,10 +29,8 @@ export default class PFDAO {
     }
   }
 
-  // 🔹 Retorna cache atual (sincrônico, compatível com React)
   listar() {
     if (!this.cache || this.cache.length === 0) {
-      // dispara atualização assíncrona, mas retorna array
       this.carregarLista();
     }
     return this.cache;
@@ -100,13 +94,17 @@ export default class PFDAO {
     }
   }
 
-  // 🔹 Mapeia dados do backend → formato do front
+  // 🔹 Backend → Front-end
   mapPF(pf) {
     return {
       id: pf._id,
       nome: pf.nome,
       email: pf.email,
       cpf: pf.cpf,
+
+      // 🔹 Novo campo — vem do backend como "data"
+      data: pf.data,
+
       endereco: pf.endereco
         ? {
             cep: pf.endereco.cep,
@@ -117,10 +115,12 @@ export default class PFDAO {
             regiao: pf.endereco.regiao,
           }
         : {},
+
       telefones: (pf.telefones || []).map((t) => ({
         ddd: t.ddd,
         numero: t.numero,
       })),
+
       titulo: pf.titulo
         ? {
             numero: pf.titulo.numero,
@@ -131,7 +131,7 @@ export default class PFDAO {
     };
   }
 
-  // 🔹 Converte objeto PF (classe) → formato JSON esperado pelo backend
+  // 🔹 PF (classe) → Backend
   toPlain(pf) {
     if (!pf) return {};
     const end = pf.getEndereco?.();
@@ -142,6 +142,10 @@ export default class PFDAO {
       nome: pf.getNome?.(),
       email: pf.getEmail?.(),
       cpf: pf.getCPF?.(),
+
+      // 🔹 Novo campo enviado para o backend
+      data: pf.getData?.(),
+
       endereco: end
         ? {
             cep: end.getCep?.(),
@@ -152,10 +156,12 @@ export default class PFDAO {
             regiao: end.getRegiao?.(),
           }
         : {},
+
       telefones: telefones.map((t) => ({
         ddd: t.getDdd?.(),
         numero: t.getNumero?.(),
       })),
+
       titulo: titulo
         ? {
             numero: titulo.getNumero?.(),
@@ -166,20 +172,16 @@ export default class PFDAO {
     };
   }
 
-   // 🔹 Busca uma PF específica por ID
-async buscarPorId(id) {
-    // tenta primeiro no cache
+  async buscarPorId(id) {
     const existente = this.cache.find((p) => p.id === id);
     if (existente) return existente;
-  
-    // se não existir, busca diretamente no backend
+
     try {
       const resp = await fetch(`${this.baseUrl}/${id}`);
       if (!resp.ok) throw new Error("Erro ao buscar PF por ID");
       const data = await resp.json();
       const pessoa = this.mapPF(data);
-  
-      // adiciona no cache para futuras buscas
+
       this.cache.push(pessoa);
       return pessoa;
     } catch (e) {
@@ -187,5 +189,4 @@ async buscarPorId(id) {
       return null;
     }
   }
-    
 }
