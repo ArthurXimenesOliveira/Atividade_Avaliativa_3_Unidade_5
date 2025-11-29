@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Table, Button, Space, Popconfirm, message, Input, Select, Spin } from "antd";
 import { EyeOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
+import dayjs from "dayjs";
 import PFDAO from "../../objetos/dao/PFDAOBackEnd.mjs";
 import PJDAO from "../../objetos/dao/PJDAOBackEnd.mjs";
 
@@ -53,6 +54,14 @@ export default function ListaPessoas() {
       dataIndex: tipo === "PF" ? "cpf" : "cnpj",
       key: "doc",
       width: 200,
+    },
+    {
+      title: tipo === "PF" ? "Data de Nascimento" : "Data de Registro",
+      dataIndex: "data",
+      key: "data",
+      width: 160,
+      render: (val) =>
+        val && val !== "" ? dayjs(val).format("DD/MM/YYYY") : "Não informado",
     },
     {
       title: "Ações",
