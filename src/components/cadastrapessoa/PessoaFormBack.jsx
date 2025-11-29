@@ -69,6 +69,21 @@ export default function PessoaForm() {
           telefones: pessoa.telefones || [],
         };
 
+        // --- MAPEAMENTO DA DATA (campo 'data' do backend) ---
+        if (pessoa.data && pessoa.data !== "") {
+          if (tipoParam === "PF") {
+            // PF -> dataNascimento
+            valores.dataNascimento = dayjs(pessoa.data);
+          } else {
+            // PJ -> dataRegistro (campo principal da Pessoa)
+            valores.dataRegistro = dayjs(pessoa.data);
+          }
+        } else {
+          // garante campos nulos quando não há data
+          if (tipoParam === "PF") valores.dataNascimento = null;
+          else valores.dataRegistro = null;
+        }
+
         if (tipoParam === "PF") {
           valores.cpf = pessoa.cpf;
           valores.titulo = pessoa.titulo || { numero: "", zona: "", secao: "" };
@@ -94,17 +109,16 @@ export default function PessoaForm() {
   }, [id, tipoParam]);
 
   // ============================================================
-//  LIMPAR FORMULÁRIO AO ENTRAR EM /cadastrar
-// ============================================================
-useEffect(() => {
-  if (!id) {
-    // Se não tem ID, estamos em modo cadastro
-    setEditando(false);
-    setTipo("PF"); // volta ao padrão
-    form.resetFields();
-  }
-}, [id]);
-
+  //  LIMPAR FORMULÁRIO AO ENTRAR EM /cadastrar
+  // ============================================================
+  useEffect(() => {
+    if (!id) {
+      // Se não tem ID, estamos em modo cadastro
+      setEditando(false);
+      setTipo("PF"); // volta ao padrão
+      form.resetFields();
+    }
+  }, [id]);
 
   // ============================================================
   // TROCA PF/PJ
@@ -146,6 +160,14 @@ useEffect(() => {
         pf.setCPF(values.cpf);
         pf.setEndereco(end);
 
+        // --- DATA DE NASCIMENTO (mapeada para 'data' na Pessoa) ---
+        const dn = values.dataNascimento;
+        const dataNascimento =
+          dn && typeof dn === "object" && typeof dn.format === "function"
+            ? dn.format("YYYY-MM-DD")
+            : dn || "";
+        if (dataNascimento) pf.setData(dataNascimento);
+
         if (values.titulo) {
           const t = new Titulo();
           t.setNumero(values.titulo.numero);
@@ -171,18 +193,26 @@ useEffect(() => {
         pj.setCNPJ(values.cnpj);
         pj.setEndereco(end);
 
+        // --- DATA DE REGISTRO (campo principal 'data' em Pessoa) ---
+        const drMain = values.dataRegistro;
+        const dataRegistroMain =
+          drMain && typeof drMain === "object" && typeof drMain.format === "function"
+            ? drMain.format("YYYY-MM-DD")
+            : drMain || "";
+        if (dataRegistroMain) pj.setData(dataRegistroMain);
+
         if (values.ie) {
           const ie = new IE();
           ie.setNumero(values.ie.numero);
           ie.setEstado(values.ie.estado);
 
           const dr = values.ie.dataRegistro;
-          const dataRegistro =
+          const dataRegistroIE =
             dr && typeof dr === "object" && typeof dr.format === "function"
               ? dr.format("YYYY-MM-DD")
               : dr || "";
 
-          ie.setDataRegistro(dataRegistro);
+          ie.setDataRegistro(dataRegistroIE);
           pj.setIE(ie);
         }
 
@@ -230,7 +260,7 @@ useEffect(() => {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#f9f9f9"
+          background: "#f9f9f9",
         }}
       >
         <Spin size="large" />
