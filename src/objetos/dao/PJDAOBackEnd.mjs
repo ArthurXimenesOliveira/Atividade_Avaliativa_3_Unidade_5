@@ -1,20 +1,21 @@
 import PJ from "../pessoas/PJ.mjs";
 
 export default class PJDAO {
-    constructor(id = null) {
-        this.baseUrl = "https://backend-pessoas.vercel.app/pj";
-        this.cache = [];
-      
-        if (id) {
-          this.cache = [];
-          this.buscarPorId(id).then((pessoa) => {
-            if (pessoa) this.cache = [pessoa];
-          });
-        } else {
-          this.carregarLista();
-        }
-      }
-      
+
+  constructor(id = null) {
+    this.baseUrl = "https://backend-pessoas.vercel.app/pj";
+    this.cache = [];
+
+    if (id) {
+      this.cache = [];
+      this.buscarPorId(id).then((pessoa) => {
+        if (pessoa) this.cache = [pessoa];
+      });
+    } else {
+      this.carregarLista();
+    }
+  }
+
   async carregarLista() {
     try {
       const resp = await fetch(this.baseUrl);
@@ -93,12 +94,17 @@ export default class PJDAO {
     }
   }
 
+  // 🔹 Backend → Front-end
   mapPJ(pj) {
     return {
       id: pj._id,
       nome: pj.nome,
       email: pj.email,
       cnpj: pj.cnpj,
+
+      // 🔹 Novo campo vindo do backend
+      data: pj.data,
+
       endereco: pj.endereco
         ? {
             cep: pj.endereco.cep,
@@ -109,10 +115,12 @@ export default class PJDAO {
             regiao: pj.endereco.regiao,
           }
         : {},
+
       telefones: (pj.telefones || []).map((t) => ({
         ddd: t.ddd,
         numero: t.numero,
       })),
+
       ie: pj.ie
         ? {
             numero: pj.ie.numero,
@@ -123,6 +131,7 @@ export default class PJDAO {
     };
   }
 
+  // 🔹 PJ (classe) → Backend
   toPlain(pj) {
     if (!pj) return {};
     const end = pj.getEndereco?.();
@@ -133,6 +142,10 @@ export default class PJDAO {
       nome: pj.getNome?.(),
       email: pj.getEmail?.(),
       cnpj: pj.getCNPJ?.(),
+
+      // 🔹 Novo campo enviado ao backend
+      data: pj.getData?.(),
+
       endereco: end
         ? {
             cep: end.getCep?.(),
@@ -143,10 +156,12 @@ export default class PJDAO {
             regiao: end.getRegiao?.(),
           }
         : {},
+
       telefones: telefones.map((t) => ({
         ddd: t.getDdd?.(),
         numero: t.getNumero?.(),
       })),
+
       ie: ie
         ? {
             numero: ie.getNumero?.(),
@@ -160,13 +175,13 @@ export default class PJDAO {
   async buscarPorId(id) {
     const existente = this.cache.find((p) => p.id === id);
     if (existente) return existente;
-  
+
     try {
       const resp = await fetch(`${this.baseUrl}/${id}`);
       if (!resp.ok) throw new Error("Erro ao buscar PJ por ID");
       const data = await resp.json();
       const pessoa = this.mapPJ(data);
-  
+
       this.cache.push(pessoa);
       return pessoa;
     } catch (e) {
